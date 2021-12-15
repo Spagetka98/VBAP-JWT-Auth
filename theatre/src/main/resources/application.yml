@@ -1,0 +1,29 @@
+logging:
+  pattern:
+    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+    console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
+  file:
+    path: logs
+  level:
+    cz:
+      osu:
+        theatre: info
+auth:
+  jwtAccessTokenExpirationMs: '600000'
+  jwtRefreshTokenExpirationMs: '1200000'
+  jwtSecret: 'theatre'
+  jwtPreposition: 'Bearer '
+spring:
+  application:
+    name: THEATREAPP
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    password: ''
+    username: root
+    url: jdbc:mysql://localhost:3306/vbap
+server:
+  error:
+    include-message: always
+
