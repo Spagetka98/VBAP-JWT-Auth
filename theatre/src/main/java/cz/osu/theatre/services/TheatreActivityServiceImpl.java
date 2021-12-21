@@ -2,6 +2,7 @@ package cz.osu.theatre.services;
 
 import cz.osu.theatre.errors.exceptions.AuthorNotFoundException;
 import cz.osu.theatre.errors.exceptions.ParameterException;
+import cz.osu.theatre.errors.exceptions.TheatreActivityAlreadyExistException;
 import cz.osu.theatre.errors.exceptions.TheatreActivitySaveException;
 import cz.osu.theatre.models.entities.Author;
 import cz.osu.theatre.models.entities.Division;
@@ -15,9 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
-import javax.transaction.Transactional;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -26,11 +27,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class TheatreActivityServiceImpl implements TheatreActivityService{
+public class TheatreActivityServiceImpl implements TheatreActivityService {
     private final TheatreActivityRepository theatreActivityRepository;
     private final DivisionRepository divisionRepository;
     private final AuthorRepository authorRepository;
@@ -44,27 +46,33 @@ public class TheatreActivityServiceImpl implements TheatreActivityService{
 
             xmlLoader.getElementsNodes()
                     .forEach((element -> {
-                        xmlLoader.createActivity(element)
-                                .ifPresent(activity -> {
-                                    Set<Author> authors = xmlLoader.createAuthors(element);
-                                    Set<Division> divisions = xmlLoader.createDivisions(element);
+                        long ndmActivityId = xmlLoader.getElementId(element);
+                        if(!this.isActivitySaved(ndmActivityId)){
+                            xmlLoader.createActivity(element)
+                                    .ifPresent(activity -> {
+                                        Set<Author> authors = xmlLoader.createAuthors(element);
+                                        Set<Division> divisions = xmlLoader.createDivisions(element);
 
-                                    this.mergeTheatreActivity(activity,authors,divisions);
-                                });
+                                        this.mergeTheatreActivity(activity, authors, divisions);
+                                    });
+                        }
                     }));
-
         } catch (ParserConfigurationException | SAXException | IOException e) {
             log.error("An error occurred while saving new Theatre activities");
             log.error("Error message: " + e.getMessage());
-            throw new TheatreActivitySaveException("Could not save theatre activities",e);
+            throw new TheatreActivitySaveException("Could not save theatre activities", e);
         }
     }
 
     @Transactional
     @Override
-    public void mergeTheatreActivity(TheatreActivity activity, Set<Author> authors, Set<Division> divisions){
-        activity.setAuthors(this.authorService.checkAuthors(authors));
-        activity.setDivisions(this.divisionService.checkDivisions(divisions));
+    public void mergeTheatreActivity(TheatreActivity activity, Set<Author> authors, Set<Division> divisions) {
+        Set<Author> foundedAuthors = this.authorService.checkAuthors(authors);
+        Set<Division> foundedDivisions = this.divisionService.checkDivisions(divisions);
+        this.theatreActivityRepository.save(activity);
+
+        foundedAuthors.forEach(author -> activity.getAuthors().add(author));
+        foundedDivisions.forEach(division -> activity.getDivisions().add(division));
 
         this.theatreActivityRepository.save(activity);
     }
@@ -72,14 +80,14 @@ public class TheatreActivityServiceImpl implements TheatreActivityService{
     @Override
     public List<TheatreActivity> getTheatreActivitiesForAuthor(long idAuthor, Pageable pageable) {
         Author author = this.authorRepository.findById(idAuthor)
-                .orElseThrow(() -> new AuthorNotFoundException(String.format("Could not find a author with id: %d",idAuthor)));
+                .orElseThrow(() -> new AuthorNotFoundException(String.format("Could not find a author with id: %d", idAuthor)));
 
-        return this.theatreActivityRepository.findByAuthors_id(author.getId(),pageable);
+        return this.theatreActivityRepository.findByAuthors_id(author.getId(), pageable);
     }
 
     @Override
     public List<TheatreActivity> getTheatreActivitiesOfDivisions(List<Long> idsDivision, Pageable pageable) {
-        return this.theatreActivityRepository.findByDivisions_idIn(idsDivision,pageable);
+        return this.theatreActivityRepository.findByDivisions_idIn(idsDivision, pageable);
     }
 
     @Override
@@ -96,13 +104,17 @@ public class TheatreActivityServiceImpl implements TheatreActivityService{
     public void createTheatreActivityFromRequest(ActivityRequest activityRequest) {
         TheatreActivity newTheatreActivity = validateTheatreActivityFromRequest(activityRequest);
 
+        if(this.theatreActivityRepository.findByNameAndStageAndDateAndStartAndEnd(newTheatreActivity.getName(), newTheatreActivity.getStage(), newTheatreActivity.getDate(), newTheatreActivity.getStart(), newTheatreActivity.getEnd()).isPresent()){
+            throw new TheatreActivityAlreadyExistException(String.format("Could not create activity: %s due to duplication",newTheatreActivity));
+        }
+
         this.theatreActivityRepository.save(newTheatreActivity);
     }
 
     @Override
     public void updateTheatreActivityFromRequest(long idActivity, ActivityRequest activityRequest) {
         TheatreActivity oldActivity = this.theatreActivityRepository.findById(idActivity)
-                .orElseThrow(()->new ParameterException(String.format("Could not find a activity with id: %d",idActivity)));
+                .orElseThrow(() -> new ParameterException(String.format("Could not find a activity with id: %d", idActivity)));
 
         TheatreActivity newTheatreActivity = validateTheatreActivityFromRequest(activityRequest);
 
@@ -119,43 +131,59 @@ public class TheatreActivityServiceImpl implements TheatreActivityService{
         this.theatreActivityRepository.save(oldActivity);
     }
 
+    @Override
+    public void deleteTheatreActivity(long idActivity) {
+        TheatreActivity oldActivity = this.theatreActivityRepository.findById(idActivity)
+                .orElseThrow(() -> new ParameterException(String.format("Could not find a activity with id: %d", idActivity)));
+
+        oldActivity.setDivisions(new HashSet<>());
+        oldActivity.setAuthors(new HashSet<>());
+
+        this.theatreActivityRepository.delete(oldActivity);
+    }
+
+    private boolean isActivitySaved(long ndmActivityId) {
+        return this.theatreActivityRepository.findByNdmId(ndmActivityId).isPresent();
+    }
+
     private TheatreActivity validateTheatreActivityFromRequest(ActivityRequest activityRequest) {
-        String activityName = parameterCheck(activityRequest.getName(),5);
-        String stage = parameterCheck(activityRequest.getStage(),3);
+        String activityName = parameterCheck(activityRequest.getName(), 5);
+        String stage = parameterCheck(activityRequest.getStage(), 3);
         LocalDate date = activityRequest.getDate();
 
         String startTime = timeCheck(activityRequest.getStart());
 
         String endTime = activityRequest.getEnd();
-        if(endTime != null) endTime = timeCheck(endTime);
+        if (endTime != null) endTime = timeCheck(endTime);
 
-        String description = parameterCheck(activityRequest.getDescription(),-1);
-        String url = parameterCheck(activityRequest.getUrl(),4);
+        String description = parameterCheck(activityRequest.getDescription(), -1);
+        String url = parameterCheck(activityRequest.getUrl(), 4);
 
         Set<Division> divisions = new HashSet<>();
-        activityRequest.getDivisionIds().forEach((idDivision)->{
+        activityRequest.getDivisionIds().forEach((idDivision) -> {
             divisions.add(this.divisionRepository.findById(idDivision).
-                    orElseThrow(()-> new ParameterException(String.format("Could not find a division with id: %d",idDivision))));
+                    orElseThrow(() -> new ParameterException(String.format("Could not find a division with id: %d", idDivision))));
         });
 
         Set<Author> authors = new HashSet<>();
-        activityRequest.getAuthorIds().forEach((idAuthor)->{
+        activityRequest.getAuthorIds().forEach((idAuthor) -> {
             authors.add(this.authorRepository.findById(idAuthor).
-                    orElseThrow(()-> new ParameterException(String.format("Could not find a author with id: %d",idAuthor))));
+                    orElseThrow(() -> new ParameterException(String.format("Could not find a author with id: %d", idAuthor))));
         });
 
-        TheatreActivity newTheatreActivity = new TheatreActivity(activityName,stage,date,startTime,endTime,description,url,0);
+        TheatreActivity newTheatreActivity = new TheatreActivity(activityName, stage, date, startTime, endTime, description, url, 0);
         newTheatreActivity.setDivisions(divisions);
         newTheatreActivity.setAuthors(authors);
         return newTheatreActivity;
     }
 
-    private String parameterCheck(String parameter,int minLength){
-        if(parameter == null || parameter.trim().isEmpty() || parameter.length() < 5) throw new ParameterException(String.format("%s cannot be null or empty and must be at least %d characters long!",parameter,minLength));
+    private String parameterCheck(String parameter, int minLength) {
+        if (parameter == null || parameter.trim().isEmpty() || parameter.length() < 5)
+            throw new ParameterException(String.format("%s cannot be null or empty and must be at least %d characters long!", parameter, minLength));
         return parameter;
     }
 
-    private String timeCheck(String parameter){
+    private String timeCheck(String parameter) {
         String pattern = "HH:mm:ss";
         DateTimeFormatter strictTimeFormatter = DateTimeFormatter
                 .ofPattern(pattern)
@@ -163,8 +191,8 @@ public class TheatreActivityServiceImpl implements TheatreActivityService{
 
         try {
             LocalTime.parse(parameter, strictTimeFormatter);
-        }catch (DateTimeParseException | NullPointerException e){
-            throw new ParameterException(String.format("Could not convert parameter: %s to time pattern: %s",parameter,pattern));
+        } catch (DateTimeParseException | NullPointerException e) {
+            throw new ParameterException(String.format("Could not convert parameter: %s to time pattern: %s", parameter, pattern));
         }
 
         return parameter;

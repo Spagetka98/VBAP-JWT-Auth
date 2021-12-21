@@ -18,12 +18,14 @@ import java.util.Set;
 @Entity(name = "theatreActivity")
 @Data
 @NoArgsConstructor
-@ToString(of = { "id", "name","stage","date","start",
-        "description","url","rating"})
+@ToString(of = {"id", "name", "stage", "date", "start",
+        "description", "url", "rating"})
 public class TheatreActivity {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private Long ndmId;
 
     @NotBlank(message = "Name cannot be blank!")
     private String name;
@@ -54,14 +56,13 @@ public class TheatreActivity {
     @OneToMany(mappedBy = "theatreActivity", cascade = CascadeType.ALL)
     private Set<Rating> ratings = new HashSet<>();
 
-    //cascade = {CascadeType.PERSIST, CascadeType.REFRESH}
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "theatreActivity_author",
             joinColumns = @JoinColumn(name = "theatreActivity_id"),
             inverseJoinColumns = @JoinColumn(name = "author_id"))
     private Set<Author> authors = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "theatreActivity_divisions",
             joinColumns = @JoinColumn(name = "theatreActivity_id"),
             inverseJoinColumns = @JoinColumn(name = "division_id"))
@@ -79,9 +80,22 @@ public class TheatreActivity {
         this.rating = rating;
     }
 
+    public TheatreActivity(@NonNull String name, Long ndmId, @NonNull String stage, @NonNull LocalDate date, @NonNull String start,
+                           String end, @NonNull String description, @NonNull String url, double rating) {
+        this.name = name;
+        this.ndmId = ndmId;
+        this.stage = stage;
+        this.date = date;
+        this.start = start;
+        this.end = end;
+        this.description = description;
+        this.url = url;
+        this.rating = rating;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(getDate(),getName(),getStage(),getStart());
+        return Objects.hash(getDate(), getName(), getStage(), getStart());
     }
 
     @Override

@@ -74,6 +74,8 @@ public class XmlLoader {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
             LocalDate date = LocalDate.parse(activity_date, formatter);
 
+            long activity_id = Long.parseLong(element.getElementsByTagName(node_id).item(0).getTextContent());
+
             String activity_name = element.getElementsByTagName(node_name).item(0).getTextContent();
 
             String activity_stage = element.getElementsByTagName(node_stage).item(0).getTextContent();
@@ -87,7 +89,7 @@ public class XmlLoader {
 
             String activity_url = element.getElementsByTagName(node_url).item(0).getTextContent();
 
-            TheatreActivity theatreActivity = new TheatreActivity(activity_name, activity_stage,
+            TheatreActivity theatreActivity = new TheatreActivity(activity_name,activity_id, activity_stage,
                     date, activity_start, activity_end, activity_description, activity_url, 0
             );
 
@@ -119,11 +121,6 @@ public class XmlLoader {
         return authorsSet;
     }
 
-    private void addAuthor(String author, Set<Author> authorsSet) {
-        Author newAuthor = new Author(author);
-        authorsSet.add(newAuthor);
-    }
-
     public Set<Division> createDivisions(Element element) {
         Set<Division> divisionsSet = new HashSet<>();
         String divisions = element.getElementsByTagName(node_division).item(0).getTextContent();
@@ -145,5 +142,24 @@ public class XmlLoader {
     private void addDivision(String division, Set<Division> divisionSet) {
         Division newDivision = new Division(division);
         divisionSet.add(newDivision);
+    }
+
+    private void addAuthor(String author, Set<Author> authorsSet) {
+        String whiteSpace = " ";
+        Author newAuthor;
+
+        if (author.contains(whiteSpace)){
+            String firstName = author.substring(0,author.indexOf(whiteSpace));
+            String lastName = author.substring(author.indexOf(whiteSpace));
+            newAuthor = new Author(firstName,lastName);
+        }else{
+            newAuthor = new Author(author);
+        }
+
+        authorsSet.add(newAuthor);
+    }
+
+    public long getElementId(Element element) {
+        return Long.parseLong(element.getElementsByTagName(node_id).item(0).getTextContent());
     }
 }

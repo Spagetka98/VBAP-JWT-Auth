@@ -25,4 +25,6 @@ public interface TheatreActivityService {
     void createTheatreActivityFromRequest(ActivityRequest activityRequest);
 
     void updateTheatreActivityFromRequest(long idActivity, ActivityRequest activityRequest);
+
+    void deleteTheatreActivity(long idActivity);
 }

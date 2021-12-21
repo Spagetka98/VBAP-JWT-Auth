@@ -1,9 +1,6 @@
 package cz.osu.theatre.services;
 
-import cz.osu.theatre.errors.exceptions.DivisionIsUsedException;
-import cz.osu.theatre.errors.exceptions.DivisionNotFoundException;
-import cz.osu.theatre.errors.exceptions.ParameterException;
-import cz.osu.theatre.errors.exceptions.TheatreActivityNotFoundException;
+import cz.osu.theatre.errors.exceptions.*;
 import cz.osu.theatre.models.entities.Division;
 import cz.osu.theatre.models.entities.TheatreActivity;
 import cz.osu.theatre.repositories.DivisionRepository;
@@ -49,7 +46,12 @@ public class DivisionServiceImpl implements DivisionService {
 
     @Override
     public void createDivision(String name) {
-        if(name == null || name.trim().isEmpty()) throw new ParameterException("Name for division cannot be null or empty!");
+        if (name == null || name.trim().isEmpty())
+            throw new ParameterException("Name for division cannot be null or empty!");
+
+        if(this.divisionRepository.findByName(name).isPresent()){
+            throw new DivisionAlreadyExistException(String.format("Could not create a division with name: %s",name));
+        }
 
         Division newDivision = new Division(name);
         this.divisionRepository.save(newDivision);
@@ -57,10 +59,15 @@ public class DivisionServiceImpl implements DivisionService {
 
     @Override
     public void updateDivision(long idDivision, String newDivisionName) {
-        if(newDivisionName == null || newDivisionName.trim().isEmpty()) throw new ParameterException("Parameter newDivisionName cannot be null or empty!");
+        if (newDivisionName == null || newDivisionName.trim().isEmpty())
+            throw new ParameterException("Parameter newDivisionName cannot be null or empty!");
 
         Division oldDivision = this.divisionRepository.findById(idDivision)
-                .orElseThrow(() -> new DivisionNotFoundException(String.format("Could not find a division with id: %d",idDivision)));
+                .orElseThrow(() -> new DivisionNotFoundException(String.format("Could not find a division with id: %d", idDivision)));
+
+        if(this.divisionRepository.findByName(newDivisionName).isPresent()){
+            throw new DivisionAlreadyExistException(String.format("Could not update division with name: %s due to duplication",newDivisionName));
+        }
 
         oldDivision.setName(newDivisionName);
         this.divisionRepository.save(oldDivision);
@@ -69,11 +76,11 @@ public class DivisionServiceImpl implements DivisionService {
     @Override
     public void deleteDivision(long idDivision) {
         Division division = this.divisionRepository.findById(idDivision)
-                .orElseThrow(() -> new DivisionNotFoundException(String.format("Could not find a division with id: %d",idDivision)));
+                .orElseThrow(() -> new DivisionNotFoundException(String.format("Could not find a division with id: %d", idDivision)));
 
         int divisionAssociations = division.getTheatreActivities().size();
         if (divisionAssociations > 0)
-            throw new DivisionIsUsedException(String.format("Could not delete division with id: %d because division has associations with: %d activities",idDivision,divisionAssociations));
+            throw new DivisionIsUsedException(String.format("Could not delete division with id: %d because division has associations with: %d activities", idDivision, divisionAssociations));
 
         this.divisionRepository.delete(division);
     }

@@ -15,7 +15,7 @@ import java.util.List;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @Slf4j
 @RestController
-@RequestMapping("/theatreActivity")
+@RequestMapping("/division")
 @RequiredArgsConstructor
 public class DivisionController {
     private final DivisionService divisionService;

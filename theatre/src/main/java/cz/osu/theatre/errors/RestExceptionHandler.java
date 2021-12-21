@@ -22,7 +22,8 @@ import java.time.LocalDateTime;
 @Slf4j
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler({UserInformationTakenException.class, BadCredentialsException.class, RatingValueException.class, RatingAlreadyExistsException.class,ParameterException.class})
+    @ExceptionHandler({UserInformationTakenException.class, BadCredentialsException.class, RatingValueException.class, RatingAlreadyExistsException.class, ParameterException.class,
+            AuthorAlreadyExistException.class, DivisionAlreadyExistException.class, TheatreActivityAlreadyExistException.class})
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     public MessageResponse badRequestException(Exception exception, WebRequest request) {
         log.error(String.format("Invoked exception type: BAD_REQUEST, full message: %s ", exception.getMessage()));
@@ -31,7 +32,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler({IllegalStateException.class, ConstraintViolationException.class, TheatreActivitySaveException.class, DivisionIsUsedException.class
-    ,NullPointerException.class})
+            , NullPointerException.class})
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     public MessageResponse internalServerErrorException(Exception exception, WebRequest request) {
         log.error(String.format("Invoked exception type: INTERNAL_SERVER_ERROR, full message: %s ", exception.getMessage()));

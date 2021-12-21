@@ -8,7 +8,9 @@ import javax.validation.constraints.Size;
 
 @Getter
 @Setter
-public class AuthorCreationRequest {
+public class AuthorUpdateRequest {
+    private long idAuthor;
+
     @NotBlank(message = "Author firstName cannot be blank!")
     @Size(min = 2,message = "Minimal size of author name is at least 2 characters")
     private String firstName;

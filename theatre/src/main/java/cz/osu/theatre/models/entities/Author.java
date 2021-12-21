@@ -13,26 +13,32 @@ import java.util.Set;
 @Entity(name = "author")
 @Data
 @NoArgsConstructor
-@ToString(of = {"id", "name"})
+@ToString(of = {"id", "firstName","lastName"})
 public class Author {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Name cannot be blank!")
-    @Column(unique = true)
-    private String name;
+    @NotBlank(message = "FirstName cannot be blank!")
+    private String firstName;
+
+    private String lastName;
 
     @ManyToMany(mappedBy = "authors")
     private Set<TheatreActivity> theatreActivities = new HashSet<>();
 
     public Author(String name) {
-        this.name = name;
+        this(name,null);
+    }
+
+    public Author(String firstName,String lastName) {
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(),getName());
+        return Objects.hash(getId(),getFirstName(),getLastName());
     }
 }

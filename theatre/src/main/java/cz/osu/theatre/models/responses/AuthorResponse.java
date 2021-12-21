@@ -9,5 +9,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AuthorResponse {
     private long id;
-    private String authorName;
+    private String firstName;
+    private String lastName;
 }

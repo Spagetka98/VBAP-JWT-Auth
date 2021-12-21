@@ -95,4 +95,15 @@ public class TheatreActivityController {
 
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/deleteTheatreActivity/{idActivity}")
+    public ResponseEntity<?> updateTheatreActivity(@PathVariable long idActivity){
+        log.info("Deleting theatre activity");
+
+        this.theatreActivityService.deleteTheatreActivity(idActivity);
+
+        log.info("Theatre activity was successfully deleted!");
+
+        return ResponseEntity.ok().build();
+    }
 }
