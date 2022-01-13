@@ -30,7 +30,7 @@ public class RatingController {
 
         log.info("Ratings was successfully loaded!");
 
-        return ResponseEntity.ok(new RatingResponse(rating.getRatingValue(),rating.getRatingCreator().getUsername(),rating.getRatingCreator().getEmail()));
+        return ResponseEntity.ok(new RatingResponse(rating.getId(),rating.getRatingValue(),rating.getRatingCreator().getUsername(),rating.getRatingCreator().getEmail()));
     }
 
     @GetMapping("/getAllRatingsForActivity/{idTheatre}")
@@ -41,7 +41,7 @@ public class RatingController {
 
         log.info("Ratings was successfully loaded!");
 
-        return ResponseEntity.ok(ratings.stream().map(rating -> new RatingResponse(rating.getRatingValue(),rating.getRatingCreator().getUsername(),rating.getRatingCreator().getEmail())).toList());
+        return ResponseEntity.ok(ratings.stream().map(rating -> new RatingResponse(rating.getId(),rating.getRatingValue(),rating.getRatingCreator().getUsername(),rating.getRatingCreator().getEmail())).toList());
     }
 
     @GetMapping("/getAllRatingsOfUser/{idUser}")
@@ -52,7 +52,7 @@ public class RatingController {
 
         log.info("Ratings was successfully loaded!");
 
-        return ResponseEntity.ok(ratings.stream().map(rating -> new RatingResponse(rating.getRatingValue(),rating.getRatingCreator().getUsername(),rating.getRatingCreator().getEmail())).toList());
+        return ResponseEntity.ok(ratings.stream().map(rating -> new RatingResponse(rating.getId(),rating.getRatingValue(),rating.getRatingCreator().getUsername(),rating.getRatingCreator().getEmail())).toList());
     }
 
     @PostMapping("/createRating")
@@ -66,22 +66,22 @@ public class RatingController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/updateRating")
+    @PutMapping("/updateRatingOfUser")
     public ResponseEntity<?> updateRating(@Valid @RequestBody RatingUpdateRequest ratingUpdateRequest){
-        log.info(String.format("Updating rating for theatre activity with id: %d and value: %d for rating with id: %d", ratingUpdateRequest.getIdActivity(),ratingUpdateRequest.getRating(),ratingUpdateRequest.getIdRating()));
+        log.info(String.format("Updating rating for theatre activity with id: %d and value: %d ", ratingUpdateRequest.getIdActivity(),ratingUpdateRequest.getRating()));
 
-        this.ratingService.updateRating(ratingUpdateRequest.getRating(),ratingUpdateRequest.getIdRating(),ratingUpdateRequest.getIdActivity());
+        this.ratingService.updateRating(ratingUpdateRequest.getRating(),ratingUpdateRequest.getIdActivity());
 
         log.info("Rating was successfully updated!");
 
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/deleteRating")
+    @DeleteMapping("/deleteRatingOfUser")
     public ResponseEntity<?> deleteRating(@RequestBody RatingDeleteRequest ratingDeleteRequest){
-        log.info(String.format("Deleting rating with id: %d for theatre activity with id: %d", ratingDeleteRequest.getIdRating(),ratingDeleteRequest.getIdActivity()));
+        log.info(String.format("Deleting rating for theatre activity with id: %d", ratingDeleteRequest.getIdActivity()));
 
-        this.ratingService.deleteRating(ratingDeleteRequest.getIdRating(), ratingDeleteRequest.getIdActivity());
+        this.ratingService.deleteRatingOfUser(ratingDeleteRequest.getIdActivity());
 
         log.info("Rating was successfully deleted!");
 

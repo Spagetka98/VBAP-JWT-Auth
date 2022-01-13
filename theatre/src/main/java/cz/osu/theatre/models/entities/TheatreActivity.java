@@ -41,7 +41,6 @@ public class TheatreActivity {
 
     private String end;
 
-    @NotBlank(message = "Description cannot be blank")
     @Lob
     @Basic(fetch = FetchType.LAZY)
     private String description;

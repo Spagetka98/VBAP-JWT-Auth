@@ -10,9 +10,9 @@ public interface RatingService {
 
     void createRating(int ratingValue,long idTheatreActivity);
 
-    void updateRating(int ratingValue, long idRating,long idTheatreActivity);
+    void updateRating(int ratingValue, long idTheatreActivity);
 
-    void deleteRating(long idRating,long idTheatreActivity);
+    void deleteRatingOfUser(long idTheatreActivity);
 
     List<Rating> getAllRatingForActivityId(long idTheatreActivity);
 

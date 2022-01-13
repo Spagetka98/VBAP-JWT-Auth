@@ -8,6 +8,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class RatingResponse {
+    private long ratingId;
     private int ratingValue;
     private String username;
     private String email;

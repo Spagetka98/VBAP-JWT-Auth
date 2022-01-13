@@ -42,7 +42,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
-    public void updateRating(int ratingValue, long idRating, long idTheatreActivity) {
+    public void updateRating(int ratingValue, long idTheatreActivity) {
         AppUser currentUser = this.appUserService.getCurrentUser();
 
         TheatreActivity theatreActivity = this.theatreActivityRepository.findById(idTheatreActivity)
@@ -52,7 +52,7 @@ public class RatingServiceImpl implements RatingService {
             throw new RatingValueException(String.format("Rating value must be between 5 or 0! Current value: %d", ratingValue));
 
         Rating userRating = this.ratingRepository.findByTheatreActivityIdAndRatingCreatorId(theatreActivity.getId(), currentUser.getId())
-                .orElseThrow(() -> new RatingNotExistsException(String.format("Could not find rating with id: %d for theatre activity with id: %d", idRating, theatreActivity.getId())));
+                .orElseThrow(() -> new RatingNotExistsException(String.format("Could not find rating for theatre activity with id: %d and user with id: %d", theatreActivity.getId(), currentUser.getId())));
 
         userRating.setRatingValue(ratingValue);
         this.ratingRepository.save(userRating);
@@ -61,14 +61,14 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
-    public void deleteRating(long idRating, long idTheatreActivity) {
+    public void deleteRatingOfUser(long idTheatreActivity) {
         AppUser currentUser = this.appUserService.getCurrentUser();
 
         TheatreActivity theatreActivity = this.theatreActivityRepository.findById(idTheatreActivity)
                 .orElseThrow(() -> new TheatreActivityNotFoundException(String.format("Could not find a theatre activity with id: %d", idTheatreActivity)));
 
         Rating userRating = this.ratingRepository.findByTheatreActivityIdAndRatingCreatorId(theatreActivity.getId(), currentUser.getId())
-                .orElseThrow(() -> new RatingNotExistsException(String.format("Could not find rating with id: %d for theatre activity with id: %d", idRating, theatreActivity.getId())));
+                .orElseThrow(() -> new RatingNotExistsException(String.format("Could not find rating for theatre activity with id: %d and user id: %d", theatreActivity.getId(), currentUser.getId())));
 
         this.ratingRepository.delete(userRating);
 

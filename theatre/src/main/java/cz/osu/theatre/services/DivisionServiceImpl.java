@@ -50,7 +50,7 @@ public class DivisionServiceImpl implements DivisionService {
             throw new ParameterException("Name for division cannot be null or empty!");
 
         if(this.divisionRepository.findByName(name).isPresent()){
-            throw new DivisionAlreadyExistException(String.format("Could not create a division with name: %s",name));
+            throw new DivisionAlreadyExistException(String.format("Could not create a division with name: %s because of duplicity",name));
         }
 
         Division newDivision = new Division(name);

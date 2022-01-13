@@ -7,5 +7,4 @@ import lombok.Setter;
 @Setter
 public class RatingDeleteRequest {
     private long idActivity;
-    private long idRating;
 }
